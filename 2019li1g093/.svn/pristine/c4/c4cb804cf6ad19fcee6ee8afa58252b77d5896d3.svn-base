@@ -1,0 +1,120 @@
+-- | Este módulo define funções comuns da Tarefa 5 do trabalho prático.
+module Main where
+
+import Tarefa2_2019li1g093
+import Tarefa4_2019li1g093
+import Tarefa0_2019li1g093
+import LI11920
+import Graphics.Gloss
+import Graphics.Gloss.Juicy
+import Graphics.Gloss.Interface.Pure.Game
+import Graphics.Gloss.Data.Bitmap
+import Juicy 
+
+-- | Função principal da Tarefa 5.
+--
+-- __NB:__ Esta Tarefa é completamente livre. Deve utilizar a biblioteca <http://hackage.haskell.org/package/gloss gloss> para animar o jogo, e reutilizar __de forma completa__ as funções das tarefas anteriores.
+--main :: IO ()
+--main = undefined
+
+estadoInicial :: Estado
+estadoInicial (Estado mapa (Jogador p d v c e)) = (Estado (stringParaMapa mapa) ((Jogador p d v c e)))
+
+desenhaEstado :: Estado -> [Picture]
+desenhaEstado (Estado m ((Jogador _ d _ _ _):_)) imagens = desenhaMapa mt (-1000-d1) (600+d2) imagens
+														where 
+															mt = transpose m
+															d1 = realToFrac d
+															d2 = (realToFrac d)*0.6
+
+desenhaMapa :: Mapa -> Float -> Float -> [Picture] -> Picture
+desenhaMapa (h:t) x y imagens = (desenhaPista h x y imagens) : (desenhaMapa t (x+150) (y-90) imagens)	
+
+desenhaPista :: Pista -> Float -> Float -> [Picture] -> [Picture]
+desenhaPista (h:t) x y imagens = (desenhaPeca h imagens) : (desenhaPista t x y imagens)							
+
+desenhaPeca :: Peca -> [Pictures] -> Picture
+desenhaPeca (Recta p h) imagens = 
+	case p of
+		Terra -> tc
+		Relva -> rc
+		Boost -> bc
+		Lama -> lc
+		Cola -> cc
+desenhaPeca (Rampa p hi hf) imagens = 
+	case p of
+		Terra -> ta
+		Relva -> ra
+		Boost -> ba
+		Lama -> la
+		Cola -> ca
+
+reageEvento :: Event -> Estado -> Jogada -> Estado
+reageEvento (EventKey (Char 'w')    Down _ _) (Estado mapa l) = jogada 0 Acelera (Estado mapa je)
+reageEvento (EventKey (Char 's')    Down _ _) (Estado mapa l) = jogada 0 Desacelera (Estado mapa je)
+reageEvento (EventKey (Char 'a')    Down _ _) (Estado mapa l) = jogada 0 (Movimenta C) (Estado mapa je) 
+reageEvento (EventKey (Char 'd')    Down _ _) (Estado mapa l) = jogada 0 (Movimenta B) (Estado mapa je) 
+reageEvento (EventKey (Char 'a')    Down _ _) (Estado mapa l) = jogada 0 (Movimenta E) (Estado mapa je) 
+reageEvento (EventKey (Char 'd')    Down _ _) (Estado mapa l) = jogada 0 (Movimenta D) (Estado mapa je) 
+reageEvento (EventKey (Char 'c')    Down _ _) (Estado mapa l) = jogada 0 (Dispara) (Estado mapa je)
+
+reageTempo :: Float -> Estado -> Estado 
+reageTempo t e = e
+
+--type Posicao = (Float,Float)
+
+--estadoInicial :: (Float,Float)
+--estadoInicial = (0,0)
+
+--desenhaEstado :: Posicao -> Picture
+--desenhaEstado (x,y) = Translate x y poligno
+ -- where
+--    poligno :: Picture
+--    poligno = Polygon [(0,0),(tamanhoPeca,0),(tamanhoPeca,tamanhoPeca),(0,tamanhoPeca),(0,0)]
+
+--tamanhoPeca :: Int
+--tamanhoPeca = 50
+
+type EstadoGloss = (Estado,[Picture])
+
+
+estadoGlossInicial :: [Picture] -> EstadoGloss
+estadoGlossInicial imagens = (0,0,imagens)
+
+fr :: Int
+fr = 50
+
+dm :: Display
+dm = FullScreen
+--dm = InWindow "Novo Jogo" (400, 400) (0, 0)
+
+reageTempoGloss :: Float -> EstadoGloss -> EstadoGloss
+reageTempoGloss t (e,imagens) = (e,imagens)
+
+reageEventoGloss :: Event -> EstadoGloss -> EstadoGloss
+reageEventoGloss (EventKey (Char 'w')    Down _ _) (e,imagens) = (x,y+10,imagens)
+reageEventoGloss (EventKey (Char 's')  Down _ _) (e,imagens) = (x,y-10,imagens)
+reageEventoGloss (EventKey (Char 'a')  Down _ _) (e,imagens) = (x-10,y,imagens)
+reageEventoGloss (EventKey (Char 'd') Down _ _) (e,imagens) = (x+10,y,imagens)
+reageEventoGloss _ s = s -- ignora qualquer outro evento
+
+desenhaEstadoGloss :: EstadoGloss -> Picture
+desenhaEstadoGloss (e,imagens) = estado
+	                          where 
+	 --                         	texturas = 
+	                          	estado = Pictures [desenhaEstado e texturas]
+
+
+
+main :: IO ()
+main = do 
+	z <- loadBMP "/home/goncalo/Pictures/bola.bmp"
+	play dm
+		black
+		fr
+		(estadoGlossInicial [z])
+		desenhaEstadoGloss
+		reageEventoGloss
+		reageTempoGloss
+
+

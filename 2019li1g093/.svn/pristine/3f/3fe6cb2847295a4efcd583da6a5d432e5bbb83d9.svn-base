@@ -1,0 +1,160 @@
+-- | Este módulo define funções comuns da Tarefa 4 do trabalho prático.
+module Tarefa4_2019li1g093 where
+
+import LI11920
+import Tarefa2_2019li1g093
+import Tarefa1_2019li1g093
+import Tarefa0_2019li1g093
+-- * Testes
+-- | Testes unitários da Tarefa 4.
+--
+-- Cada teste é um par (/tempo/,/'Mapa'/,/'Jogador'/).
+testesT4 :: [(Double,Mapa,Jogador)]
+testesT4 = [t1,t2,t3,t4,t5]
+          where
+               t1 = (1,[[Recta Terra 0, Rampa Relva 0 2, Rampa Relva 2 0, Rampa Relva 0 2, Recta Terra 2],[Recta Terra 0, Recta Relva 0, Recta Boost 0, Recta Lama 0, Recta Terra 0]],(Jogador 0 1.2 0.9 2 (Chao True)))
+               t2 = (3,[[Recta Terra 0,Recta Relva 0,Recta Relva 0,Recta Terra 0],[Recta Terra 0,Rampa Terra 0 1,Recta Terra 1,Rampa Terra 1 0]],(Jogador 1 0.5 1 2 (Chao True)))
+               t3 = (2,[[Recta Terra 0,Recta Boost 0,Recta Terra 0],[Recta Terra 0,Recta Relva 0,Recta Relva 0],[Recta Terra 0,Rampa Terra 0 2,Rampa Relva 2 3]],(Jogador 2 0.5 0 2 (Morto 1.0)))
+               t4 = (0.5,[[Recta Terra 0,Recta Relva 0,Recta Relva 0,Recta Terra 0],[Recta Terra 0,Rampa Terra 0 1,Recta Terra 1,Rampa Terra 1 0]],(Jogador 0 0.5 0 2 (Morto 1.0)))
+               t5 = (2,[[Recta Terra 0, Rampa Relva 0 2, Rampa Relva 2 0, Rampa Relva 0 2, Recta Terra 2],[Recta Terra 0, Recta Relva 0, Recta Boost 0, Recta Lama 0, Recta Terra 0]],(Jogador 0 2.8 1 2 (Ar 2 0 10)))
+
+-- * Funções principais da Tarefa 4.
+
+-- | Avança o estado de um 'Jogador' um 'passo' em frente, durante um determinado período de tempo.
+passo :: Double -- ^ O tempo decorrido.
+     -> Mapa    -- ^ O mapa utilizado.
+     -> Jogador -- ^ O estado anterior do 'Jogador'.
+     -> Jogador -- ^ O estado do 'Jogador' após um 'passo'.
+passo t m j = move t m (acelera t m j)
+
+-- | Altera a velocidade de um 'Jogador', durante um determinado período de tempo.
+acelera :: Double -- ^ O tempo decorrido.
+     -> Mapa    -- ^ O mapa utilizado.
+     -> Jogador -- ^ O estado anterior do 'Jogador'.
+     -> Jogador -- ^ O estado do 'Jogador' após acelerar.
+acelera t m (Jogador p d v c e) = (Jogador p d (v' (Jogador p d v c e) (piso peca) t) c e)
+                              where
+                                   peca = encontraPosicaoMatriz (p,dist) m
+                                   dist = floor d
+
+
+piso :: Peca -> Piso
+piso (Recta x p) = x
+piso (Rampa x h hf) = x
+
+
+-- | Altera a posição de 'Jogador', durante um determinado período de tempo.
+move :: Double -- ^ O tempo decorrido.
+     -> Mapa    -- ^ O mapa utilizado.
+     -> Jogador -- ^ O estado anterior do 'Jogador'.
+     -> Jogador -- ^ O estado do 'Jogador' após se movimentar.
+move t m (Jogador p d v c (Ar a i g)) = if verificaDist x d && verificaAr y a then (Jogador p dist v c (Ar (alturaAr y a) i g)) else moveAr (Jogador p d v c (Ar a i g)) t pseg
+                                        where
+                                        dist = fromIntegral((floor d)+1)
+                                        pseg = encontraPosicaoMatriz (p,((floor d)+1)) m
+                                        patual = encontraPosicaoMatriz (p,(floor d)) m
+                                        vetorVel = Polar v i
+                                        vetorg = Polar g (-90)
+                                        vetorFinal@(Cartesiano x y) = polar2cart (multiplicaVetor t (somaVetores vetorVel vetorg))
+                                        pontoFinal = (x+d,y+a)
+move t m (Jogador p d v c (Chao b)) = if verificaDist x d then moveChao t (Jogador p d v c (Chao b)) patual pseg else (Jogador p (x+d) v c (Chao b))
+                                   where
+                                        pseg = encontraPosicaoMatriz (p,((floor d)+1)) m
+                                        dist = fromIntegral((floor d)+1)
+                                        patual = encontraPosicaoMatriz (p,(floor d)) m
+                                        incatual = inclinacaoPecaAnterior patual
+                                        incseg = inclinacaoPecaAnterior pseg
+                                        vetorVel = Polar v incatual
+                                        vetorg = Polar 0 (-90)
+                                        vetorFinal@(Cartesiano x y) = polar2cart (multiplicaVetor t (somaVetores vetorVel vetorg))
+                                        pontoFinal = (x+d,y+a)
+                                        a = altPeca d patual
+                                        altAr = altPeca dist pseg
+move t m (Jogador p d v c (Morto time)) = if t<time then (Jogador p d v c (Morto (time-t))) else (Jogador p d v c (Chao False))
+
+v' :: Jogador -> Piso -> Double -> Double
+v' (Jogador _ _ v _ e) piso t = if (v + ((fromIntegral(accelMota v e) - ((atrito piso e) * v)) * t)) >= 0 then (v + ((fromIntegral(accelMota v e) - ((atrito piso e) * v)) * t)) else 0.0
+
+accelMota :: Double -> EstadoJogador-> Int
+accelMota v e = if (v < 2 && ifAcelera e) then 1 else 0   
+
+atrito :: Piso -> EstadoJogador -> Double
+atrito p e = if p==Terra && ifchao e then 0.25 else
+				if p==Relva && ifchao e then 0.75 else
+				if p==Boost && ifchao e  then -0.50 else
+				if p==Lama && ifchao e then 1.50 else 
+				if p==Cola && ifchao e then 3.00 else
+				if ifAr e then 0.125 else 0
+
+
+vAr :: Jogador -> Double -> Double
+vAr (Jogador p d v c (Ar a i g)) t = if (v - (0.125 * v * t)) >= 0 then v - (0.125 * v * t) else 0.0
+
+g' :: Jogador -> Double -> Double
+g' (Jogador p d v c (Ar a i g)) t  = g + t
+
+
+ifAcelera :: EstadoJogador -> Bool
+ifAcelera (Chao True) = True
+ifAcelera _ = False
+
+tiraTimeout :: EstadoJogador -> Double -> EstadoJogador
+tiraTimeout (Morto time) t = if (time-t)>=0 then Morto (time-t) else Chao False
+
+
+moveAr :: Jogador -> Double -> Peca -> Jogador
+moveAr (Jogador p d v c (Ar a i g)) t pseg = if abs(i-inc)>=45 then (Jogador p (x+d) 0 c (Morto 1.0))
+                                            else if abs(i-inc)<45 && verificaAr y a == False then (Jogador p dist (x+d) c (Chao False)) else (Jogador p (x+d) (vAr (Jogador p d v c (Ar a i g)) t) c (Ar (alturaAr y a) i g))
+                              where
+                               inc = inclinacaoPecaAnterior pseg
+                               dist = fromIntegral((floor d)+1)
+                               vetorVel = Polar v i
+                               vetorg = Polar g (-90)
+                               vetorFinal@(Cartesiano x y) = polar2cart (multiplicaVetor t (somaVetores vetorVel vetorg))
+                               pontoFinal = (x+d,y+a)
+
+  
+alturaAr :: Double -> Double -> Double
+alturaAr y a = if y+a >=0 then y+a else 0.0
+
+--verificar se o Ponto Final, em relaçao ao inicial, se passou de Peça, se ficou no Ar, se ficou no Chao, se ficou na mesma pista, etc...
+
+avancaPeca :: Double -> Jogador -> Bool
+avancaPeca t (Jogador _ d v _ e) = if floor((v*t)+d)>floor d then True else False
+
+moveChao :: Double -> Jogador -> Peca -> Peca -> Jogador 
+moveChao t (Jogador p d v c (Chao b)) patual pseg = if incseg >= incatual then (Jogador p dist v c (Chao b)) else (Jogador p dist v c (Ar altAr (inclinacaoPecaAnterior patual) 0)) 
+                                                     --  else (Jogador p (d+((v'(Jogador p d v c (Chao b)) (piso patual) t)*t)) (((v'(Jogador p d v c (Chao b)) (piso patual) t)*t)) c (Chao b))
+                              where 
+                                   incatual = inclinacaoPecaAnterior patual
+                                   incseg = inclinacaoPecaAnterior pseg
+                                   dist = fromIntegral((floor d)+1)
+                                   vetorVel = Polar v incatual
+                                   vetorg = Polar 0 (-90)
+                                   vetorFinal@(Cartesiano x y) = polar2cart (multiplicaVetor t (somaVetores vetorVel vetorg))
+                                   pontoFinal = (x+d,y+a)
+                                   a = altPeca d patual
+                                   altAr = altPeca dist pseg
+
+--verificar se o Ponto Final, em relaçao ao inicial, se passou de Peça, se ficou no Ar, se ficou no Chao, se ficou na mesma pista, etc...
+
+
+--verifica se o Ponto final fica na peça seguinte ou se fica na sua peça
+verificaDist :: Double -> Double -> Bool
+verificaDist x d = if floor(x+d) > floor d then True else False
+
+verificaAr :: Double -> Double -> Bool 
+verificaAr y a = if y+a>0 then True else False
+
+--vetor :: Jogador -> Mapa -> Double -> Vetor
+--vetor (Jogador p d v c e) mapa g = (d,alt+g)
+--vetor (Jogador p d v c e) mapa v = 
+--                              where
+--                                   peca = encontraPosicaoMatriz (p,(floor d)) mapa 
+--                                   alt = altPeca d peca
+
+
+
+
+--(Jogador p (d+((v'(Jogador p d v c (Chao b)) (piso patual) t)*t)) (((v'(Jogador p d v c (Chao b)) (piso patual) t)*t)) c (Chao b))
+--(Jogador p (d+((v'(Jogador p d v c (Chao b)) (piso patual) t)*t)) v c (Chao b))

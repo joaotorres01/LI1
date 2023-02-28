@@ -1,0 +1,113 @@
+module Main where
+
+import LI11920
+import Tarefa1_2019li1g093
+import Tarefa2_2019li1g093
+import Tarefa4_2019li1g093
+import Graphics.Gloss.Data.Picture
+import Graphics.Gloss.Interface.Pure.Game
+import Juicy
+import Codec.Picture.Types as Juicy
+import Codec.Picture as Juicy
+import Graphics.Gloss
+import Graphics.Gloss.Juicy 
+
+
+
+estadoInicial :: Estado 
+estadoInicial = Estado 
+    (gera 1 15 474)
+    [Jogador 0 0 0 4 (Chao True)]
+
+desenhaEstado :: Estado -> [DynamicImage] -> [Picture]
+desenhaEstado (Estado m ((Jogador _ d _ _ _):_)) imagens =
+    desenhaMapa m  (-200) (0) imagens
+                                                           
+
+desenhaMapa :: Mapa -> Float -> Float -> [DynamicImage] -> [Picture]
+desenhaMapa (h:t) x y imagens = (desenhaPista h x y imagens) ++ (desenhaMapa t x (y-60) imagens)
+desenhaMapa [] _ _  _ = []
+
+desenhaPista :: Pista -> Float -> Float -> [DynamicImage] -> [Picture]
+desenhaPista (h:t) x y imagens = (desenhaPeca h x y imagens) : (desenhaPista t (x+60) y imagens)
+desenhaPista [] _ _ _ = []                            
+
+desenhaPeca :: Peca -> Float -> Float -> [DynamicImage] -> Picture
+desenhaPeca (Recta p h) x y (terra:lama:boost:cola:relva:_) = 
+    let textura  
+            | p==Terra = terra
+            | p==Lama = lama
+            | p==Boost = boost
+            | p==Cola = cola
+            | otherwise = relva
+        Just text = fromDynamicImage textura 
+    in Translate x (y+(fromIntegral (h*35))) text
+desenhaPeca (Rampa p hi hf) x y (terra:lama:boost:cola:relva:_) = 
+       															 let
+       															 	textura 
+            																| p==Terra = terra
+            																| p==Lama = lama
+            																| p==Boost = boost
+            																| p==Cola = cola
+           															 		| otherwise = relva
+       															 	textura' = if hf>hi then sobeDynamicImage (hf-hi) textura else desceDynamicImage (hi-hf) textura
+        															Just text = fromDynamicImage textura' 
+        														in if hi>hf 
+       															   then Translate x (y+(fromIntegral (hf*90))) text 
+       															   else Translate x (y+(fromIntegral (hi*90))) text
+
+
+reageEvento :: Event -> Estado -> Estado
+reageEvento (EventKey (Char 'w')    Down _ _) e  = jogada 0 Acelera e
+reageEvento (EventKey (Char 's')    Down _ _) e  = jogada 0 Desacelera e
+reageEvento (EventKey (Char 'a')    Down _ _) e  = jogada 0 (Movimenta E) e 
+reageEvento (EventKey (Char 'd')    Down _ _) e  = jogada 0 (Movimenta D) e 
+reageEvento (EventKey (Char 'c')    Down _ _) e  = jogada 0 (Dispara) e
+reageEvento _ e = e -- ignora qualquer outro evento
+
+reageTempo :: Float -> Estado -> Estado 
+reageTempo t e = e
+
+
+type EstadoGloss = (Estado,[DynamicImage])
+
+
+estadoGlossInicial :: [DynamicImage] -> EstadoGloss
+estadoGlossInicial imagens = (estadoInicial ,imagens)
+
+fr :: Int
+fr = 50
+
+dm :: Display
+dm = FullScreen
+--dm = InWindow "Novo Jogo" (400, 400) (0, 0)
+
+reageTempoGloss :: Float -> EstadoGloss -> EstadoGloss
+reageTempoGloss t (e,imagens) = (e,imagens)
+
+reageEventoGloss :: Event -> EstadoGloss -> EstadoGloss
+reageEventoGloss ev (e, imagens) = ((reageEvento ev e) ,imagens)
+
+
+desenhaEstadoGloss :: EstadoGloss -> Picture
+desenhaEstadoGloss (e,g) = 
+    let estado = (desenhaEstado e g)
+    in Pictures estado
+                                  
+
+
+
+main :: IO ()
+main = do 
+    Right terra <- readImage "../texturas/terra.png"
+    Right lama <- readImage "../texturas/lama.png"
+    Right boost <- readImage "../texturas/boost.png"
+    Right cola <- readImage "../texturas/cola.png"
+    Right relva <- readImage "../texturas/relva.png"
+    play dm
+        black
+        fr
+        (estadoGlossInicial [terra,lama,boost,cola,relva])
+        desenhaEstadoGloss
+        reageEventoGloss
+        reageTempoGloss

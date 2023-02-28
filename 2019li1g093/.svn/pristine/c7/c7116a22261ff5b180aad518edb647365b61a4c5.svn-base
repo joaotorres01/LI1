@@ -1,0 +1,108 @@
+-- | Este módulo define funções comuns da Tarefa 4 do trabalho prático.
+module Tarefa4_2019li1g093 where
+
+import LI11920
+import Tarefa2_2019li1g093
+import Tarefa1_2019li1g093
+import Tarefa0_2019li1g093
+-- * Testes
+-- | Testes unitários da Tarefa 4.
+--
+-- Cada teste é um par (/tempo/,/'Mapa'/,/'Jogador'/).
+testesT4 :: [(Double,Mapa,Jogador)]
+testesT4 = [(1.3,[[Recta Terra 0, Rampa Relva 0 2, Rampa Relva 2 0, Rampa Relva 0 2, Recta Terra 2],[Recta Terra 0, Recta Relva 0, Recta Boost 0, Recta Lama 0, Recta Terra 0]],(Jogador 0 1.3 1.2 2 (Chao True)))]
+
+-- * Funções principais da Tarefa 4.
+
+-- | Avança o estado de um 'Jogador' um 'passo' em frente, durante um determinado período de tempo.
+passo :: Double -- ^ O tempo decorrido.
+     -> Mapa    -- ^ O mapa utilizado.
+     -> Jogador -- ^ O estado anterior do 'Jogador'.
+     -> Jogador -- ^ O estado do 'Jogador' após um 'passo'.
+passo t m j = move t m (acelera t m j)
+
+-- | Altera a velocidade de um 'Jogador', durante um determinado período de tempo.
+acelera :: Double -- ^ O tempo decorrido.
+     -> Mapa    -- ^ O mapa utilizado.
+     -> Jogador -- ^ O estado anterior do 'Jogador'.
+     -> Jogador -- ^ O estado do 'Jogador' após acelerar.
+acelera t m (Jogador p d v c e) = (Jogador p d (v' (Jogador p d v c e) (piso peca) t) c e)
+                              where
+                                   peca = encontraPosicaoMatriz (p,dist) m
+                                   dist = floor d
+
+
+piso :: Peca -> Piso
+piso (Recta x p) = x
+piso (Rampa x h hf) = x
+
+
+-- | Altera a posição de 'Jogador', durante um determinado período de tempo.
+move :: Double -- ^ O tempo decorrido.
+     -> Mapa    -- ^ O mapa utilizado.
+     -> Jogador -- ^ O estado anterior do 'Jogador'.
+     -> Jogador -- ^ O estado do 'Jogador' após se movimentar.
+move t m (Jogador p d v c (Ar a i g)) = if avancaPeca t (Jogador p d v c (Ar a i g)) then (Jogador p dist v c (Ar a i g)) else inclinacaoAr (Jogador p (d+(v*t)) v c (Ar a i g)) t pseg
+                                        where
+                                        dist = fromIntegral((floor d)+1)
+                                        pseg = encontraPosicaoMatriz (p,((floor d)+1)) m
+                                        patual = encontraPosicaoMatriz (p,(floor d)) m
+move t m (Jogador p d v c (Chao b)) = if avancaPeca t (Jogador p d v c (Chao b)) then inclinacaoChao t (Jogador p d v c (Chao b)) patual pseg else (Jogador p (d+(v+t)) v c (Chao b))
+                                   where
+                                        dist = fromIntegral((floor d)+1)
+                                        pseg = encontraPosicaoMatriz (p,((floor d)+1)) m
+                                        patual = encontraPosicaoMatriz (p,(floor d)) m
+                                  
+
+v' :: Jogador -> Piso -> Double -> Double
+v' (Jogador _ _ v _ e) piso t = if (v + (fromIntegral(accelMota v e) - ((atrito piso e) * v)) * t) >= 0 then (v + (fromIntegral(accelMota v e) - ((atrito piso e) * v)) * t) else 0.0
+
+
+accelMota :: Double -> EstadoJogador-> Int
+accelMota v e = if (v < 2 && ifAcelera e) then 1 else 0   
+
+atrito :: Piso -> EstadoJogador -> Double
+atrito p e = if p==Terra && ifchao e then 0.25 else
+				if p==Relva && ifchao e then 0.75 else
+				if p==Boost && ifchao e  then -0.50 else
+				if p==Lama && ifchao e then 1.50 else 
+				if p==Cola && ifchao e then 3.00 else
+				if ifAr e then 0.125 else 0
+
+
+vAr :: Jogador -> Double -> Double
+vAr (Jogador p d v c (Ar a i g)) t = if (v - (0.125 * v * t)) >= 0 then v - (0.125 * v * t) else 0.0
+
+g' :: Jogador -> Double -> Double
+g' (Jogador p d v c (Ar a i g)) t  = g + t
+
+
+ifAcelera :: EstadoJogador -> Bool
+ifAcelera (Chao True) = True
+ifAcelera _ = False
+
+tiraTimeout :: EstadoJogador -> Double -> EstadoJogador
+tiraTimeout (Morto time) t = if (time-t)>=0 then Morto (time-t) else Chao False
+
+
+inclinacaoAr :: Jogador -> Double -> Peca -> Jogador
+inclinacaoAr (Jogador p d v c (Ar a i g)) t pseg = if abs(i-inc)>=45 && avancaPeca t (Jogador p d v c (Ar a i g)) then (Jogador p dist 0 c (Morto 1.0))
+                                            else if abs(i-inc)<45 && avancaPeca t (Jogador p d v c (Ar a i g)) then (Jogador p dist v c (Chao False)) else (Jogador p (d+(v*t)) (vAr (Jogador p d v c (Ar a i g)) t) c (Ar a i (g' (Jogador p d v c (Ar a i g)) t)))
+                              where
+                               inc = inclinacaoPecaAnterior pseg
+                               dist = fromIntegral((floor d)+1)
+  
+
+avancaPeca :: Double -> Jogador -> Bool
+avancaPeca t (Jogador _ d v _ e) = if floor((v*t)+d)>floor d then True else False
+
+inclinacaoChao :: Double -> Jogador -> Peca -> Peca -> Jogador 
+inclinacaoChao t (Jogador p d v c (Chao b)) patual pseg = if incseg >= incatual && avancaPeca t (Jogador p d v c (Chao b)) then (Jogador p dist v c (Chao b))
+                                                   else if incseg < incatual && avancaPeca t (Jogador p d v c (Chao b)) then (Jogador p dist v c (Ar (altPeca dist pseg) (inclinacaoPecaAnterior patual) 0)) 
+                                                       else (Jogador p (d+(v*t)) v c (Chao b))
+                              where 
+                                   incatual = inclinacaoPecaAnterior patual
+                                   incseg = inclinacaoPecaAnterior pseg
+                                   dist = fromIntegral((floor d)+1)
+
+

@@ -1,0 +1,88 @@
+-- | Este módulo define funções comuns da Tarefa 5 do trabalho prático.
+module Main where
+
+import Tarefa2_2019li1g093
+import Tarefa4_2019li1g093
+import Tarefa0_2019li1g093
+import LI11920
+import Graphics.Gloss
+import Graphics.Gloss.Juicy
+import Graphics.Gloss.Interface.Pure.Game
+import Graphics.Gloss.Data.Bitmap
+
+-- | Função principal da Tarefa 5.
+--
+-- __NB:__ Esta Tarefa é completamente livre. Deve utilizar a biblioteca <http://hackage.haskell.org/package/gloss gloss> para animar o jogo, e reutilizar __de forma completa__ as funções das tarefas anteriores.
+--main :: IO ()
+--main = undefined
+
+estadoInicial :: Estado
+estadoInicial e = (Estado (stringParaMapa mapa1) ((Jogador 0 2 2 2 (Chao True)))
+
+desenhaEstado :: Estado -> [Picture]
+desenhaEstado (Estado m ((Jogador _ d _ _ _):_)) imagens = desenhaMapa mt (-1000-d1) (600+d2) imagens
+														where 
+															mt = transpose m
+															d1 = realToFrac d
+															d2 = (realToFrac d)*0.6
+
+desenhaMapa :: Mapa -> Float -> Float -> [Picture] -> Picture
+desenhaMapa (h:t) x y imagens = (desenhaPista h x y imagens) : (desenhaMapa t (x+150) (y-90) imagens)	
+
+desenhaPista :: Pista -> Float -> Float -> [Picture] -> [Picture]
+desenhaPista (h:t) x y imagens = (desenhaPeca h imagens) : (desenhaPista t x y imagens)							
+
+desenhaPeca :: Peca -> [Pictures] -> Picture
+desenhaPeca (Recta) imagens 
+
+reageEvento :: Event -> Estado -> Estado
+reageEvento _ s = s
+
+reageTempo :: Float -> Estado -> Estado 
+reageTempo t e = e
+
+
+
+type EstadoGloss = (Estado,[Picture])
+
+
+estadoGlossInicial :: [Picture] -> EstadoGloss
+estadoGlossInicial imagens = (0,0,imagens)
+
+fr :: Int
+fr = 50
+
+dm :: Display
+dm = FullScreen
+--dm = InWindow "Novo Jogo" (400, 400) (0, 0)
+
+reageTempoGloss :: Float -> EstadoGloss -> EstadoGloss
+reageTempoGloss t (e,imagens) = (e,imagens)
+
+reageEventoGloss :: Event -> EstadoGloss -> EstadoGloss
+reageEventoGloss (EventKey (Char 'w')    Down _ _) (e,imagens) = (x,y+10,imagens)
+reageEventoGloss (EventKey (Char 's')  Down _ _) (e,imagens) = (x,y-10,imagens)
+reageEventoGloss (EventKey (Char 'a')  Down _ _) (e,imagens) = (x-10,y,imagens)
+reageEventoGloss (EventKey (Char 'd') Down _ _) (e,imagens) = (x+10,y,imagens)
+reageEventoGloss _ s = s -- ignora qualquer outro evento
+
+desenhaEstadoGloss :: EstadoGloss -> Picture
+desenhaEstadoGloss (e,imagens) = estado
+	                          where 
+	                          	texturas = 
+	                          	estado = Pictures [desenhaEstado e texturas]
+
+
+
+main :: IO ()
+main = do 
+	z <- loadBMP "/home/goncalo/Pictures/bola.bmp"
+	play dm
+		black
+		fr
+		(estadoGlossInicial [z])
+		desenhaEstadoGloss
+		reageEventoGloss
+		reageTempoGloss
+
+

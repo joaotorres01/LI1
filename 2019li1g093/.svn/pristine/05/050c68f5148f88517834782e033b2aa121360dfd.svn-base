@@ -1,0 +1,140 @@
+-- | Este módulo define funções comuns da Tarefa 2 do trabalho prático.
+module Tarefa2_2019li1g093 where
+
+import LI11920
+import Tarefa1_2019li1g093
+import Tarefa0_2019li1g093
+import Constroi
+
+-- * Testes
+
+-- | Testes unitários da Tarefa 2.
+--
+-- Cada teste é um triplo (/identificador do 'Jogador'/,/'Jogada' a efetuar/,/'Estado' anterior/).
+testesT2 :: [(Int,Jogada,Estado)]
+testesT2 = []
+
+-- * Funções principais da Tarefa 2.
+
+-- | Efetua uma jogada.
+--jogada :: Int -- ^ O identificador do 'Jogador' que efetua a jogada.
+   --    -> Jogada -- ^ A 'Jogada' a efetuar.
+     --  -> Estado -- ^ O 'Estado' anterior.
+      -- -> Estado -- ^ O 'Estado' resultante após o jogador efetuar a jogada.
+--jogada indice (Movimenta dir) estado | dir == B = moveBaixo Patual Pseg (Estado mapa l) n
+ --                                    | dir == C = moveCima Patual Pseg (Estado mapa l) n 
+   --                                  | dir == D = moveDir estado indice
+     --                                | dir == E = moveEsq estado indice
+--jogada indice (Acelera) estado 
+--jogada indice (Desacelera) estado
+
+
+--1)
+
+inclinacaoPecaAnterior:: Peca -> Double -- funcao que calcula a inclinacao de uma peca
+inclinacaoPecaAnterior (Recta _ _) = 0
+inclinacaoPecaAnterior (Rampa _ x y) = rad2graus (atan (fromIntegral (y-x)))
+
+
+moveCima :: Peca -> Peca -> Estado -> Int -> Estado  
+moveCima patual pseg (Estado mapa l) n = 
+    if ifchao e && difAlt player num patual pseg <=0.2 && difAlt player num patual pseg >=(-0.2) then (Estado mapa (atualizaIndiceLista n (sobepista player) l)) else 
+       if ifchao e && difAlt player num patual pseg >0.2 then Estado mapa (atualizaIndiceLista n morto l)  else
+       if ifchao e && difAlt player num patual pseg <(-0.2) then (Estado mapa (atualizaIndiceLista n ar l)) else error "erro"
+                where morto = (Jogador a b c d (Morto 1.0))
+                      player = (Jogador a b c d e)
+                      ar = (Jogador a b c d (Ar (altPeca (encontraIndiceLista n l) b patual) (inclinacaoPecaAnterior patual) 0))
+                      (Jogador a b c d e) = encontraIndiceLista n l
+                      num = fazNum (Jogador a b c d e)
+                      
+
+moveBaixo:: Peca -> Peca -> Estado -> Int -> Estado -- funcao que verifica se o jogador pode passar para a pista abaixo 
+moveBaixo patual pseg (Estado mapa l) n = 
+    if ifchao e && difAlt player num patual pseg <=0.2 && difAlt player num patual pseg >=(-0.2) then (Estado mapa (atualizaIndiceLista n (descepista player (Estado mapa l)) l)) else
+       if ifchao e && difAlt player num patual pseg >0.2 then Estado mapa (atualizaIndiceLista n morto l) else
+       if ifchao e && difAlt player num patual pseg <(-0.2) then  (Estado mapa (atualizaIndiceLista n ar l)) else error "erro"
+            where 
+                (Jogador a b c d e) = encontraIndiceLista n l
+                morto = (Jogador a b c d (Morto 1.0))
+                player = (Jogador a b c d e)
+                ar = (Jogador a b c d (Ar (altPeca (encontraIndiceLista n l) b patual) (inclinacaoPecaAnterior patual) 0))
+                num = fazNum (Jogador a b c d e)
+
+
+sobepista:: Jogador -> Jogador -- dada a pista altual do jogador verifica se é possível passar para a pista acima 
+sobepista (Jogador a b c d e)  = if a==0 then (Jogador a b c d e) else (Jogador (a-1) b c d e)
+
+descepista:: Jogador -> Estado -> Jogador --dada a pista altual do jogador verifica se é possível passar para a pista anterior
+descepista (Jogador a b c d e) (Estado h t) = if ((length h)-1)==a then (Jogador a b c d e) else (Jogador (a+1) b c d e)
+
+--Altura
+altPeca:: Jogador -> Double -> Peca -> Double -- dada uma peca e um double (diferença entre a distancia que o jogador percorreu e esse mesmo valor arrendondado as unidades) a funçao determina a altura num determinado ponto da peca
+altPeca (Jogador a b c d e) num (Recta _ h) = fromIntegral h
+altPeca (Jogador a b c d e) num (Rampa _ x y) =(((fromIntegral(y-x))*num)+fromIntegral(x))
+                               where 
+                                num = fazNum (Jogador a b c d e)
+
+difAlt :: Jogador -> Double -> Peca -> Peca -> Double -- função que verifica a diferença entre a altura da peça para a qual o jogador pretende ir e a altura da peça em que ele se encontra
+difAlt (Jogador a b c d e) num pi pf = ((altPeca (Jogador a b c d e) num pf)-(altPeca (Jogador a b c d e) num pi)) 
+                    where num = fazNum (Jogador a b c d e)
+                   
+ifchao :: EstadoJogador -> Bool --funcao que verifica se o jogador se encontra no chao ou não 
+ifchao (Chao _) = True 
+ifchao _ = False 
+
+ifAr:: EstadoJogador -> Bool -- Funcao que verifica se o jogador se encontra no ar ou nao
+ifAr (Ar _ _ _) = True
+ifAr _ = False
+
+inclinacaoPlayer :: EstadoJogador -> Double
+inclinacaoPlayer (Ar a b c) = b 
+
+fazNum :: Jogador -> Double
+fazNum (Jogador a b c d e) = b - fromIntegral(floor b)
+
+auxAltura:: Jogador -> Peca -> Double
+auxAltura (Jogador a b c d e) (Rampa p x y) = (fromIntegral(y-x)*(b-fromIntegral(floor b))+fromIntegral(x))
+--acaba altura
+
+moveDir:: Estado -> Int -> Estado
+moveDir (Estado mapa l) n = 
+                         if (ifAr (Ar p o i))==True && inclinacaoPlayer (Ar p o i) <=(-75) then Estado mapa (atualizaIndiceLista n ar l) else (Estado mapa l)
+                            where 
+                                ar = (Jogador a b c d (Ar p ((inclinacaoPlayer (Ar p o i)) -15) i))
+                                (Jogador a b c d (Ar p o i))= encontraIndiceLista n l
+                                estado = (Ar p o i)
+
+
+moveEsq :: Estado -> Int -> Estado
+moveEsq (Estado mapa l) n = if (ifAr (Ar p o i))==True && inclinacaoPlayer (Ar p o i) >=75 then Estado mapa (atualizaIndiceLista n ar l) else (Estado mapa l)
+                            where
+                                ar = (Jogador a b c d (Ar p ((inclinacaoPlayer (Ar p o i)) + 15) i))
+                                (Jogador a b c d (Ar p o i))=encontraIndiceLista n l
+                                 
+
+acelerar :: Jogador -> Jogador
+acelerar (Jogador a b c d e) = if (ifchao e)==True then (Jogador a b c d (Chao True)) else (Jogador a b c d e)
+
+desacelararrr :: Jogador -> Jogador
+desacelararrr (Jogador a b c d e) = if (ifchao e)==True then (Jogador a b c d (Chao False)) else (Jogador a b c d e)
+
+dispararcola :: [Jogador] -> Int -> Mapa -> Estado
+dispararcola ej n mapa = Estado mapaAtualizado estadoAtual
+                    where
+                        jcola@(Jogador pistaAtual distancia vel cola estado) = jcola {colaJogador = cola - 1}
+                        mapaAtualizado = atualizaPosicaoMatriz (pistaAtual, distInteira) pecaCola mapa
+                        pecaCola = meteCola peca
+                        distInteira = floor distancia
+                        peca = encontraIndiceLista (distInteira-1) (encontraIndiceLista pistaAtual mapa)
+                        estadoAtual=atualizaIndiceLista n jcola ej
+
+meteCola :: Jogador -> Peca -> Peca
+meteCola x (Recta _ h) = if ifmunicao x && ifpecaVal x then (Recta Cola h)
+meteCola x (Rampa _ h1 hf) = if ifmunicao x && ifpecaVal x then (Rampa Cola h1 hf)
+    where x = (Jogador a (dist b) c (colaa d) e)  
+
+ifmunicao:: Jogador -> Bool 
+ifmunicao (Jogador a b c (colaa d) e) = if d>=1 then True else False
+
+ifpecaVal:: Jogador -> Bool
+ifpecaVal (Jogador a (dist b) c d e) = if b>=1 then True else False

@@ -1,0 +1,51 @@
+-- | Este módulo define funções comuns da Tarefa 4 do trabalho prático.
+module Tarefa4_2019li1g093 where
+
+import LI11920
+import Tarefa2_2019li1g093
+-- * Testes
+-- | Testes unitários da Tarefa 4.
+--
+-- Cada teste é um par (/tempo/,/'Mapa'/,/'Jogador'/).
+testesT4 :: [(Double,Mapa,Jogador)]
+testesT4 = []
+
+-- * Funções principais da Tarefa 4.
+
+-- | Avança o estado de um 'Jogador' um 'passo' em frente, durante um determinado período de tempo.
+passo :: Double -- ^ O tempo decorrido.
+     -> Mapa    -- ^ O mapa utilizado.
+     -> Jogador -- ^ O estado anterior do 'Jogador'.
+     -> Jogador -- ^ O estado do 'Jogador' após um 'passo'.
+passo t m j = move t m (acelera t m j)
+
+-- | Altera a velocidade de um 'Jogador', durante um determinado período de tempo.
+acelera :: Double -- ^ O tempo decorrido.
+     -> Mapa    -- ^ O mapa utilizado.
+     -> Jogador -- ^ O estado anterior do 'Jogador'.
+     -> Jogador -- ^ O estado do 'Jogador' após acelerar.
+acelera = undefined
+
+-- | Altera a posição de 'Jogador', durante um determinado período de tempo.
+move :: Double -- ^ O tempo decorrido.
+     -> Mapa    -- ^ O mapa utilizado.
+     -> Jogador -- ^ O estado anterior do 'Jogador'.
+     -> Jogador -- ^ O estado do 'Jogador' após se movimentar.
+move = undefined
+
+
+v' :: Jogador -> Piso -> Double -> Double -> Double
+v' (Jogador p d v c e) p t = v + (accelMota - ((atrito p (Jogador p d v c e)) * v)) * t
+
+
+accelMota :: Jogador -> Int
+accelMota (Jogador p d v c (Chao aceleraJogador)) = if (v < 2 && aceleraJogador) then 1 else 0   
+
+atrito :: Piso -> EstadoJogador -> Double
+atrito p e = if p==Terra && ifChao e then 0.25 else
+				if p==Relva && ifChao e then 0.75 else
+				if p==Boost && ifChao e  then -0.50 else
+				if p==Lama && ifChao e then 1.50 else 
+				if p==Cola && ifChao e then 3.00 else
+				if ifAr e then 0.125 else 0
+

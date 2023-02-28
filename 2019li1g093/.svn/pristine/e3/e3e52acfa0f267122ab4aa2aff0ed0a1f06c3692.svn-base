@@ -1,0 +1,257 @@
+-- | Este módulo define funções comuns da Tarefa 2 do trabalho prático.
+module Tarefa2_2019li1g093 where
+
+import LI11920
+import Tarefa1_2019li1g093
+import Tarefa0_2019li1g093
+import Constroi
+
+-- * Testes
+
+-- | Testes unitários da Tarefa 2.
+--
+-- Cada teste é um triplo (/identificador do 'Jogador'/,/'Jogada' a efetuar/,/'Estado' anterior/).
+testesT2 :: [(Int,Jogada,Estado)]
+testesT2 = [t1,t2,t3,t4,t5,t6,t7,t8,t9,t10,t11,t12,t13,t14,t15,t16,t17,t18,t19,t20,t21,t22,t23,t24,t25,t26,t27,t28,t29,t30,t31,t32,t32,t34,t35,t36,t37,t38,t39]
+    where t1 = (0, Acelera, Estado [[Recta Terra 0, Recta Relva 0],[Recta Terra 0, Recta Relva 0]] [Jogador 0 1 1 1 (Ar 1 0 0), Jogador 1 1 1 1 (Ar 1 0 0)]) --testa se o jogador consegue acelerar enquanto está no Ar
+          t2 = (0, Acelera, Estado [[Recta Terra 0, Recta Relva 0],[Recta Terra 0, Recta Relva 0]] [Jogador 0 1 1 1 (Chao True), Jogador 1 1 1 1 (Chao False)]) --testa se o jogador consegue acelerar enquanto está no Chao
+          t3 = (0, Acelera, Estado [[Recta Terra 0, Recta Relva 0],[Recta Terra 0, Recta Relva 0]] [Jogador 0 1 1 1 (Morto 1.0), Jogador 1 1 1 1 (Chao False)])  --testa se o jogador consegue acelerar enquanto está Morto
+          t4 = (0, Desacelera, Estado [[Recta Terra 0, Recta Relva 0],[Recta Terra 0, Recta Relva 0]] [Jogador 0 1 1 1 (Ar 1 0 0), Jogador 1 1 1 1 (Ar 1 0 0)]) --testa se o jogador consegue desacelerar enquanto está no Ar
+          t5 = (0, Desacelera, Estado [[Recta Terra 0, Recta Relva 0],[Recta Terra 0, Recta Relva 0]] [Jogador 0 1 1 1 (Chao False), Jogador 1 1 1 1 (Chao False)]) --testa se o jogador consegue desacelerar enquanto está no Chao
+          t6 = (0, Desacelera, Estado [[Recta Terra 0, Recta Relva 0],[Recta Terra 0, Recta Relva 0]] [Jogador 0 1 1 1 (Morto 1.0), Jogador 1 1 1 1 (Chao False)]) --testa se o jogador consegue desacelerar enquanto está Morto
+          t7 = (0, Dispara, Estado [[Recta Terra 0, Recta Relva 0],[Recta Terra 0, Recta Relva 0]] [Jogador 0 1 1 1 (Ar 1 0 0), Jogador 1 1 1 1 (Ar 1 0 0)]) --t testa se o jogador consegue disparar enquanto está no Ar
+          t8 = (0, Dispara, Estado [[Recta Terra 0, Recta Relva 0],[Recta Terra 0, Recta Relva 0]] [Jogador 0 1 1 1 (Chao False), Jogador 1 1 1 1 (Chao False)])  -- testa se o jogador consegue disparar enquanto está no Chao
+          t9 = (0, Dispara, Estado [[Recta Terra 0, Recta Relva 0],[Recta Terra 0, Recta Relva 0]] [Jogador 0 1 1 0 (Chao True), Jogador 1 1 1 1 (Chao False)]) -- testa se o jogador consegue disparar enquanto está no Chao, sem colas
+          t10 = (0, Dispara, Estado [[Recta Terra 0, Recta Relva 0],[Recta Terra 0, Recta Relva 0]] [Jogador 0 0 1 1 (Chao True), Jogador 1 1 1 1 (Chao False)]) --testa se o jogador consegue disparar enquanto está no Chao, na 1ªa peça
+          t11 = (0, Dispara, Estado [[Recta Terra 0, Recta Relva 0],[Recta Terra 0, Recta Relva 0]] [Jogador 0 1 1 1 (Morto 1.0), Jogador 1 1 1 1 (Chao False)]) -- testa se o jogador consegue dispara enquanto está Morto
+          t12 = (0, Movimenta D, Estado [[Recta Terra 0, Recta Relva 0],[Recta Terra 0, Recta Relva 0]] [Jogador 0 1 1 1 (Ar 1 0 0), Jogador 1 1 1 1 (Ar 1 0 0)])-- testa se o jogador consegue inclinar a mota para a direita, enquanto está no ar
+          t13 = (0, Movimenta D, Estado [[Recta Terra 0, Recta Relva 0],[Recta Terra 0, Recta Relva 0]] [Jogador 0 1 1 1 (Chao True), Jogador 1 1 1 1 (Chao False)]) ----testa se o jogador consegue inclinar a mota para a direita, enquanto está no Chao, numa Reta
+          t14 = (0, Movimenta D, Estado [[Recta Terra 0, Recta Relva 0],[Recta Terra 0, Recta Relva 0]] [Jogador 0 1 1 1 (Ar 1 (-75) 0), Jogador 1 1 1 1 (Ar 1 (-75) 0)]) --testa se o jogador consegue inclinar a mota para a direita, enquanto está no ar e com -75 graus de inclinação
+          t15 = (0, Movimenta D, Estado [[Recta Terra 0, Recta Relva 0],[Recta Terra 0, Recta Relva 0]] [Jogador 0 1 1 1 (Morto 1.0), Jogador 1 1 1 1 (Ar 1 0 0)]) --testa se o jogador consegue inclinar a mota para a direita, enquanto está Morto
+          t16 = (0, Movimenta E, Estado [[Recta Terra 0, Recta Relva 0],[Recta Terra 0, Recta Relva 0]] [Jogador 0 1 1 1 (Ar 1 0 0), Jogador 1 1 1 1 (Ar 1 0 0)])  --testa se o jogador consegue inclinar a mota para a esquerda, enquanto está no ar
+          t17 = (0, Movimenta E, Estado [[Recta Terra 0, Recta Relva 0],[Recta Terra 0, Recta Relva 0]] [Jogador 0 1 1 1 (Chao True), Jogador 1 1 1 1 (Chao False)]) --testa se o jogador consegue inclinar a mota para a esquerda, enquanto está no Chao
+          t18 = (0, Movimenta E, Estado [[Recta Terra 0, Recta Relva 0],[Recta Terra 0, Recta Relva 0]] [Jogador 0 1 1 1 (Ar 1 75 0), Jogador 1 1 1 1 (Ar 1 75 0)]) --testa se o jogador consegue inclinar a mota para a esquerda, enquanto está no ar e com +75 graus de inclinação
+          t19 = (0, Movimenta E, Estado [[Recta Terra 0, Recta Relva 0],[Recta Terra 0, Recta Relva 0]] [Jogador 0 1 1 1 (Morto 1.0), Jogador 1 1 1 1 (Ar 1 0 0)]) --testa se o jogador consegue inclinar a mota para a esquerda, enquanto está Morto
+          t20 = (0, Movimenta C, Estado [[Recta Terra 0, Rampa Relva 0 2, Rampa Relva 2 0],[Recta Terra 0, Rampa Relva 0 2, Rampa Relva 2 0]] [Jogador 0 1.5 1 1 (Chao True), Jogador 1 1 1 1 (Chao False)]) --testa se o jogador consegue movimentar a mota para a pista de cima, enquanto esta no chao na pista de cima
+          t21 = (1, Movimenta C, Estado [[Recta Terra 0, Rampa Relva 0 2, Rampa Relva 2 0],[Recta Terra 0, Rampa Relva 0 2, Rampa Relva 2 0]] [Jogador 0 1.5 1 1 (Chao True), Jogador 1 1 1 1 (Chao True)]) --testa se o jogador consegue movimentar a mota para a pista de cima, enquanto esta no chao noutra pista qualquer
+          t22 = (1, Movimenta C, Estado [[Recta Terra 0, Rampa Relva 0 5, Rampa Relva 5 0],[Recta Terra 0, Recta Terra 0, Recta Terra 0]] [Jogador 0 0 1 1 (Chao True), Jogador 1 1.5 1 1 (Chao True)]) --testa se o jogador consegue movimentar a mota para a pista de cima, enquanto esta no chao e encontra uma diferença de alturas >0.2
+          t23 = (1, Movimenta C, Estado [[Recta Terra 0, Rampa Relva 0 2, Rampa Relva 2 0],[Recta Terra 0, Rampa Relva 0 2, Rampa Relva 2 0]] [Jogador 0 1.5 1 1 (Chao True), Jogador 1 1 1 1 (Morto 1.0)]) --testa se o jogador consegue movimentar a mota para a pista de cima, enquanto esta Morto
+          t24 = (1, Movimenta C, Estado [[Recta Terra 0, Recta Terra 0, Recta Terra 0],[Recta Terra 0,  Rampa Relva 0 5, Rampa Relva 5 0]] [Jogador 0 1 1 1 (Chao True), Jogador 1 1.5 1 1 (Chao True)]) --testa se o jogador consegue movimentar a mota para a pista de cima, enquanto esta no chao e encontra uma diferença de alturas <-0.2
+          t25 = (1, Movimenta C, Estado [[Recta Terra 0, Rampa Relva 0 1, Rampa Relva 1 0],[Recta Terra 0, Recta Terra 0, Recta Terra 0]] [Jogador 0 1.1 1 1 (Chao True), Jogador 1 1.1 1 1 (Chao True)]) --testa se o jogador consegue movimentar a mota para a pista de cima, enquanto esta no chao e encontra uma |diferença de alturas| = 0.2
+          t26 = (1, Movimenta C, Estado [[Recta Terra 0, Rampa Relva 0 2, Rampa Relva 2 0],[Recta Terra 0, Recta Terra 0, Recta Terra 0]] [Jogador 0 1.5 1 1 (Chao True), Jogador 1 1.5 1 1 (Ar 1 0 0)]) --testa se o jogador consegue movimentar a mota para a pista de cima, enquanto esta no ar e encontra uma diferença de alturas <-0.2
+          t27 = (1, Movimenta C, Estado [[Recta Terra 0, Recta Terra 0, Recta Terra 0],[Recta Terra 0,  Rampa Relva 0 2, Rampa Relva 2 0]] [Jogador 0 1.5 1 1 (Chao True), Jogador 1 1.5 1 1 (Ar 1 0 0)]) --testa se o jogador consegue movimentar a mota para a pista de cima, enquanto esta no ar e encontra uma diferença de alturas >0.2
+          t28 = (1, Movimenta C, Estado [[Recta Terra 0, Rampa Relva 0 1, Rampa Relva 1 0],[Recta Terra 0, Recta Terra 0, Recta Terra 0]] [Jogador 0 1.1 1 1 (Chao True), Jogador 1 1.1 1 1 (Ar 1 0 0)]) --testa se o jogador consegue movimentar a mota para a pista de cima, enquanto esta no ar e encontra uma |diferença de alturas| = 0.2
+          t29 = (1, Movimenta B, Estado [[Recta Terra 0, Rampa Relva 0 2, Rampa Relva 2 0],[Recta Terra 0, Rampa Relva 0 2, Rampa Relva 2 0]] [Jogador 0 1.5 1 1 (Chao True), Jogador 1 1 1 1 (Chao True)]) --testa se o jogador consegue movimentar a mota para a pista de baixo, enquanto esta no chao na pista de baixo
+          t30 = (0, Movimenta B, Estado [[Recta Terra 0, Rampa Relva 0 2, Rampa Relva 2 0],[Recta Terra 0, Rampa Relva 0 2, Rampa Relva 2 0]] [Jogador 0 1.5 1 1 (Chao True), Jogador 1 1 1 1 (Chao True)]) --testa se o jogador consegue movimentar a mota para a pista de baixo, enquanto esta no chao noutra pista qualquer
+          t31 = (0, Movimenta B, Estado [[Recta Terra 0, Rampa Relva 0 2, Rampa Relva 2 0],[Recta Terra 0, Rampa Relva 0 2, Rampa Relva 2 0]] [Jogador 0 1.5 1 1 (Morto 1.0), Jogador 1 1 1 1 (Chao True)]) --testa se o jogador consegue movimentar a mota para a pista de baixo, enquanto esta Morto
+          t32 = (0, Movimenta B, Estado [[Recta Terra 0, Rampa Relva 0 2, Rampa Relva 2 0],[Recta Terra 0, Recta Terra 0, Recta Terra 0]] [Jogador 0 1.5 1 1 (Chao True), Jogador 1 1.5 1 1 (Chao True)])--testa se o jogador consegue movimentar a mota para a pista de baixo, enquanto esta no chao e encontra uma diferença de alturas <0.2
+          t33 = (0, Movimenta B, Estado [[Recta Terra 0, Recta Terra 0, Recta Terra 0],[Recta Terra 0,  Rampa Relva 0 2, Rampa Relva 2 0]] [Jogador 0 1.5 1 1 (Chao True), Jogador 1 1.5 1 1 (Chao True)])--testa se o jogador consegue movimentar a mota para a pista de baixo, enquanto esta no chao e encontra uma diferença de alturas >-0.2
+          t34 = (0, Movimenta B, Estado [[Recta Terra 0, Rampa Relva 0 1, Rampa Relva 1 0],[Recta Terra 0, Recta Terra 0, Recta Terra 0]] [Jogador 0 1.1 1 1 (Chao True), Jogador 1 1.1 1 1 (Chao True)]) --testa se o jogador consegue movimentar a mota para a pista de baixo, enquanto esta no chao e encontra uma |diferença de alturas| = 0.2
+          t35 = (0, Movimenta B, Estado [[Recta Terra 0, Rampa Relva 0 2, Rampa Relva 2 0],[Recta Terra 0, Recta Terra 0, Recta Terra 0]] [Jogador 0 1.5 1 1 (Ar 1 0 0), Jogador 1 1.5 1 1 (Ar 1 0 0)]) --testa se o jogador consegue movimentar a mota para a pista de baixo, enquanto esta no ar e encontra uma diferença de alturas <0.2
+          t36 = (0, Movimenta B, Estado [[Recta Terra 0, Recta Terra 0, Recta Terra 0],[Recta Terra 0,  Rampa Relva 0 2, Rampa Relva 2 0]] [Jogador 0 1.5 1 1 (Ar 1 0 0), Jogador 1 1.5 1 1 (Ar 1 0 0)])--testa se o jogador consegue movimentar a mota para a pista de baixo, enquanto esta no ar e encontra uma diferença de alturas >-0.2
+          t37 = (0, Movimenta B, Estado [[Recta Terra 0, Rampa Relva 0 1, Rampa Relva 1 0],[Recta Terra 0, Recta Terra 0, Recta Terra 0]] [Jogador 0 1.1 1 1 (Ar 1 0 0), Jogador 1 1.1 1 1 (Ar 1 0 0)]) --testa se o jogador consegue movimentar a mota para a pista de baixo, enquanto esta no ar e encontra uma |diferença de alturas| = 0.2
+          t38 = (0, Dispara, (Estado [[Recta Terra 0, Rampa Terra 0 2, Rampa Terra 2 0],[Recta Terra 0, Recta Terra 0, Recta Terra 0]] [(Jogador 0 2 1 1 (Chao True)),(Jogador 1 1 1 1 (Chao True))]))-- testa se o jogador consegue disparar enquanto está no Chao, numa Rampa 
+          t39 = (1, Dispara, (Estado [[Recta Terra 0, Rampa Terra 0 2, Rampa Terra 2 0],[Recta Terra 0, Recta Terra 0, Recta Terra 0]] [(Jogador 0 2 1 0 (Chao True)),(Jogador 1 2 1 0 (Chao True))]))--testa se o jogador consegue disparar enquanto está no Chao, numa Recta
+
+-- * Funções principais da Tarefa 2.
+
+-- | Efetua uma jogada.
+jogada :: Int -- ^ O identificador do 'Jogador' que efetua a jogada.
+       -> Jogada -- ^ A 'Jogada' a efetuar.
+       -> Estado -- ^ O 'Estado' anterior.
+       -> Estado -- ^ O 'Estado' resultante após o jogador efetuar a jogada.
+jogada indice (Movimenta dir) (Estado mapa je)  | dir == B = moveBaixo patual pant (Estado mapa je) indice
+                                                | dir == C = moveCima patual pseg (Estado mapa je) indice
+                                                | dir == D = moveDir (Estado mapa je) indice
+                                                | dir == E = moveEsq (Estado mapa je) indice
+                                                where
+                                    (Jogador a b c d e) = encontraIndiceLista indice je
+                                    patual = encontraPosicaoMatriz (a,dist) mapa
+                                    pseg = encontraPosicaoMatriz ((a-1),dist) mapa
+                                    pant = encontraPosicaoMatriz ((a-1),dist) mapa
+                                    dist = floor b
+
+jogada indice (Acelera) (Estado mapa je) = (Estado mapa (atualizaIndiceLista indice (acelerar (encontraIndiceLista indice je)) je))
+jogada indice (Desacelera) (Estado mapa je) = (Estado mapa (atualizaIndiceLista indice (desacelararrr (encontraIndiceLista indice je)) je))
+jogada indice (Dispara) (Estado mapa je) = dispararcola (atualizaIndiceLista indice (encontraIndiceLista indice je) je) indice mapa 
+
+
+--1)
+
+
+-- funcao que calcula a inclinacao de uma peca
+inclinacaoPecaAnterior:: Peca -> Double 
+inclinacaoPecaAnterior (Rampa _ x y) = rad2graus (atan (fromIntegral (y-x)))
+
+-- funçao que faz com que um jogador suba de pista
+moveCima :: Peca --peça onde o jogador se encontra
+        -> Peca -- peça para a qual o jogador se quer mover (peça acima)
+        -> Estado --Estado atual do Jogo
+        -> Int  -- número do jogador que se quer mover
+        -> Estado -- Estado atualizado em que o jogador se tentou mover para a peça acima, podendo subir, ficar no Ar ou morrer
+moveCima patual pseg (Estado mapa l) n = 
+    if ifchao e && difAlt player patual pseg <=0.2 && difAlt player patual pseg >=(-0.2) then (Estado mapa (atualizaIndiceLista n (sobepista player) l)) else 
+       if ifchao e && difAlt player patual pseg >0.2 then Estado mapa (atualizaIndiceLista n morto l) else
+       if ifchao e && ifchao e && difAlt player patual pseg <(-0.2) then (Estado mapa (atualizaIndiceLista n ar l)) else Estado mapa l
+                where morto = (Jogador a b 0 d (Morto 1.0))
+                      player = (Jogador a b c d e)
+                      ar = (Jogador (a-1) b c d (Ar (altPeca b patual) (inclinacaoPecaAnterior patual) 0))
+                      (Jogador a b c d e) = encontraIndiceLista n l
+                      
+-- funçao que faz com que o jogador desça uma pista
+moveBaixo:: Peca -- peça onde o jogador se encontra
+        -> Peca -- peça para a qual o jogador se quer mover (peça abaixo)
+        -> Estado -- Estado atual do Jogo
+        -> Int -- número do jogador que se quer mover
+        -> Estado -- Estado atualizado em que o jogador se tentou mover para a peça abaixo, podendo descer, ficar no Ar ou morrer
+moveBaixo patual pseg (Estado mapa l) n = 
+    if ifchao e && difAlt player patual pseg <=0.2 && difAlt player patual pseg >=(-0.2) then (Estado mapa (atualizaIndiceLista n (descepista player mapa) l)) else
+       if ifchao e && difAlt player patual pseg >0.2 then Estado mapa (atualizaIndiceLista n morto l) else
+       if ifchao e && difAlt player patual pseg <(-0.2) then  (Estado mapa (atualizaIndiceLista n descer l)) else Estado mapa l
+            where 
+                (Jogador a b c d e) = encontraIndiceLista n l
+                morto = (Jogador a b 0 d (Morto 1.0))
+                player = (Jogador a b c d e)
+                ar = (Jogador a b c d (Ar (altPeca b patual) (inclinacaoPecaAnterior patual) 0))
+                descer = (descepista ar mapa)
+
+--funçao que verifica se um jogador consegue passar para a pisa acima
+sobepista:: Jogador -- Jogador com as suas características atuais
+        -> Jogador  -- Jogador com as mesmas caracteristicas mas numa pista acima
+sobepista (Jogador a b c d e)  = if a==0 then (Jogador a b c d e) else (Jogador (a-1) b c d e)
+
+--funçao que verifica se um jogador consegue passar para a pista abaixo
+descepista:: Jogador -- Jogador com as suas caracteristicas atuais
+         -> Mapa -- Mapa atual do jogo
+         -> Jogador --- Jogador com as mesmas caracteristicas mas numa pista abaixo 
+descepista (Jogador a b c d e) h = if ((length h)-1)==a then (Jogador a b c d e) else (Jogador (a+1) b c d e)
+
+--Altura
+
+-- funçao que calcula, tendo em conta a altura inicial e final de uma peça e a distancia dessa peça que o jogador já percorreu, a que altura se encontra o jogador
+altPeca:: Double -- distancia do jogador
+            -> Peca -- peça onde ele se encontra
+            -> Double -- altura a que está do chão
+altPeca b (Recta _ h) = fromIntegral h
+altPeca b (Rampa _ x y) =(((fromIntegral(y-x))*num)+fromIntegral(x))
+                               where 
+                                num = fazNum b
+
+
+-- funçao que calcula a diferença de alturas de duas peças, tendo em conta a distancia que o jogador já percorreu
+difAlt :: Jogador -- Jogador que quer mudar de pista
+        -> Peca -- peça onde o jogador se encontra
+        -> Peca  -- peça para onde se quer mover
+        -> Double -- função que verifica a diferença entre a altura da peça para a qual o jogador pretende ir e a altura da peça em que ele se encontra
+difAlt (Jogador a b c d e) pi pf = ((altPeca b pf)-(altPeca b pi)) 
+
+--funcao que verifica se o jogador se encontra no chao ou não                    
+ifchao :: EstadoJogador
+ -> Bool 
+ifchao (Chao _) = True 
+ifchao _ = False 
+
+
+-- Funcao que verifica se o jogador se encontra no ar ou nao
+ifAr:: EstadoJogador
+ -> Bool 
+ifAr (Ar _ _ _) = True
+ifAr _ = False
+
+--função que, dado um certo jogador no Ar, dá a sua inclinação
+inclinacaoPlayer :: EstadoJogador -- Estado atual do Jogador
+                -> Double --inclinação do jogador
+inclinacaoPlayer (Ar a b c) = b 
+
+
+fazNum :: Double -> Double --função que, dado um certo número, nos dá a parte inteira desse numero ex: fazNum 5.6 = 5
+fazNum b = b - fromIntegral(floor b)
+
+--acaba altura
+
+-- funçao que faz com que um jogador se incline para a direita (-15 graus)
+moveDir:: Estado -- Estado atual do Jogo
+         -> Int -- número do jogador que se quer inclinar
+         -> Estado -- Estado do jogo depois da tentativa de inclinação, podendo o jogador inclinar-se ou ficar igual
+moveDir (Estado mapa l) n = 
+                         if (ifAr e)==True && inclinacaoPlayer e >=(-75) then Estado mapa (atualizaIndiceLista n ar l) else (Estado mapa l)
+                            where 
+                                ar = (Jogador a b c d estado)
+                                (Jogador a b c d e) = encontraIndiceLista n l
+                                estado = estadoAr e
+
+-- função que, dado o estado de um jogador, diminui 15 graus à sua inclinação
+estadoAr :: EstadoJogador --Estado atual do Jogador
+        -> EstadoJogador --Estado do Jogador com -15 graus de inclinaçao
+estadoAr (Ar p o i) = (Ar p (o-15) i)
+   
+
+-- funçao que faz com que um jogador se incline para a esquerda (-15 graus)
+moveEsq :: Estado -- Estado atual do jogo
+            -> Int -- número do jogador que se quer inclinar
+            -> Estado -- Estado do jogo depois da tentativa de inclinação, podendo o jogador inclinar-se ou ficar igual
+moveEsq (Estado mapa l) n = if (ifAr e)==True && inclinacaoPlayer e <=75 then Estado mapa (atualizaIndiceLista n ar l) else (Estado mapa l)
+                            where
+                                ar = (Jogador a b c d estado)
+                                (Jogador a b c d e) = encontraIndiceLista n l
+                                estado = estadoAr1 e
+
+-- função que, dado o estado de um jogador, aumenta 15 graus à sua inclinação
+estadoAr1 :: EstadoJogador --Estado atual do Jogador
+            -> EstadoJogador --Estado do Jogador com +15 graus de inclinaçao
+estadoAr1 (Ar p o i) = (Ar p (o + 15) i)
+
+-- função que recebe um jogador, verifica se ele está no chao e ,caso seja verdade, faz com que o jogador acelere
+acelerar :: Jogador -- Jogador que quer acelerar
+         -> Jogador --Jogador depois de acelerar
+acelerar (Jogador a b c d e) = if (ifchao e)==True then (Jogador a b c d (Chao True)) else (Jogador a b c d e)
+
+ -- função que recebe um jogador, verifica se ele está no chao e ,caso seja verdade, faz com que o jogador desacelere
+desacelararrr :: Jogador -- Jogador que quer desacelerar
+             -> Jogador -- Jogador depois de desacelerar
+desacelararrr (Jogador a b c d e) = if (ifchao e)==True then (Jogador a b c d (Chao False)) else (Jogador a b c d e)
+
+-- funçao usada para os jogadores poderem disparar colas
+dispararcola :: [Jogador] --Lista de todos os jogadores dentro do jogo 
+                -> Int --número do jogador que se quer fazer com que dispare a cola
+                -> Mapa -- Mapa do jogo
+                -> Estado -- Estado atualizado do jogo depois da tentativa de disparo, podendo mudar uma peça para o piso de cola se o jogador estiver no chao, tiver muniçao, tiver vivo e se estiver numa peça valida
+dispararcola ej n m = if ifmunicao cola && ifchao estado && ifVivo estado && ifpecaVal distancia 
+                        then Estado mapaAtualizado estadoAtual else Estado m ej
+                    where
+                        jc = jcola (Jogador pistaAtual distancia vel cola estado)
+                        mapaAtualizado = atualizaPosicaoMatriz (pistaAtual, (distInteira-1)) pecaCola m
+                        pecaCola = meteCola cola distancia peca
+                        distInteira = fromIntegral(floor distancia)
+                        peca = encontraIndiceLista (distInteira-1) (encontraIndiceLista n m)
+                        estadoAtual = atualizaIndiceLista n jc ej
+                        (Jogador pistaAtual distancia vel cola estado) = encontraIndiceLista n ej
+
+
+-- funçao que permite trocar o piso de uma peça por Cola
+meteCola :: Int -- inteiro que representa o numero de colas de um jogador
+ -> Double -- double que represeta a distancia de um jogador
+ -> Peca -- peça onde o jogador se encontra
+  -> Peca -- peça final, que caso o jogador tenha muniçao e esteja numa peça valida, atualiza o seu piso para Cola, caso contrario fica igual
+meteCola d b (Recta p h) = if ifmunicao d && ifpecaVal b  then (Recta Cola h) else (Recta p h)
+meteCola d b (Rampa p h1 hf) = if ifmunicao d  && ifpecaVal b then (Rampa Cola h1 hf) else (Rampa p h1 hf)  
+
+--funçao que recebe um jogador e que dá o mesmo jogador mas com menos 1 de muniçao
+jcola :: Jogador -- Jogador que quer disparar uma cola
+        -> Jogador  -- Jogador depois de ter disparado uma cola
+jcola (Jogador a b c d e) = (Jogador a b c (d-1) e)
+
+--funçao que verifica se o jogador está vivo e no chao
+ifVivo :: EstadoJogador -- Estado atual do Jogador
+                 -> Bool -- verifica se ele se econtra no chao
+ifVivo (Chao _) = True
+
+--funçao que verifica qual a quantidade de muniçoes do jogador
+ifmunicao:: Int -- numero de colas de um jogador
+        -> Bool --verifica se esse numero é maior ou igual a 1
+ifmunicao d = if d>=1 then True else False
+
+-- funçao que verifica se a posiçao onde o jogador se encontra é valida para poder disparar cola, ou seja, verifica se o jogador não está na 1ª peça
+ifpecaVal:: Double -- Distancia percorrida pelo jogador
+            -> Bool -- Verifica se o valor é maior ou igual a 1
+ifpecaVal b = if b>=1 then True else False

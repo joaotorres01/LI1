@@ -1,0 +1,60 @@
+-- | Este módulo define funções comuns da Tarefa 2 do trabalho prático.
+module Tarefa1_2019li1g093 where
+
+
+import LI11920
+import System.Random
+import Data.List.Split
+
+-- * Testes
+
+-- | Testes unitários da Tarefa 1.
+--
+-- Cada teste é um triplo (/número de 'Pista's/,/comprimento de cada 'Pista' do 'Mapa'/,/semente de aleatoriedades/).
+testesT1 :: [(Int,Int,Int)]
+testesT1 = [(1,2,3),(5,1,2),(8,4,8),(4,7,1),(6,2,7),(9,3,6),(1,99,45),(66,1,47),(38,91,32),(9,13,12),(4,9,15)]
+
+-- * Funções pré-definidas da Tarefa 1.
+
+geraAleatorios :: Int -> Int -> [Int]
+geraAleatorios n seed = take n (randomRs (0,9) (mkStdGen seed))
+
+-- * Funções principais da Tarefa 1.
+
+gera :: Int -> Int -> Int -> Mapa
+gera npistas comprimento semente = fazMapa (agrupa (geraAleatorios (2*(npistas*(comprimento-1)) ) semente)) npistas comprimento
+
+
+--1)
+agrupa :: [Int] -> [(Int,Int)]
+agrupa (h1:h2:t) = (h1,h2): agrupa t
+
+
+tipoPiso :: Int -> Peca -> Piso 
+tipoPiso x (Recta p num) = if x>=0 && x<=1 then Terra else
+                                   if x>=2 && x<=3 then Relva else
+                                   if x==4 then Lama else
+                                   if x==5 then Boost else p
+tipoPiso x (Rampa p num a) = if x>=0 && x<=1 then Terra else
+                                   if x>=2 && x<=3 then Relva else
+                                   if x==4 then Lama else
+                                   if x==5 then Boost else p
+
+alturaPeca :: Peca -> Int
+alturaPeca (Recta p a) = a 
+alturaPeca (Rampa p num a) = a 
+
+tipoPeca :: (Int,Int) -> Peca -> Peca
+tipoPeca (x,y) p = if y==0 || y==1 then Rampa (tipoPiso x p) (alturaPeca p) ((alturaPeca p)+y+1) else
+                   if y>=2 && y<=5 then if ((alturaPeca p)-(y-1))>=0 then Rampa (tipoPiso x p) (alturaPeca p) ((alturaPeca p)-(y-1)) 
+                                        else if alturaPeca p >0 then Rampa (tipoPiso x p) (alturaPeca p) 0 else Recta (tipoPiso x p) 0
+                    else Recta (tipoPiso x p) (alturaPeca p)
+
+fazPista :: [(Int,Int)] -> Peca -> Bool -> Pista
+fazPista l p True = (Recta Terra 0) : (fazPista l p False)
+fazPista [] p _ = []
+fazPista (h:t) p b = (tipoPeca h p) : (fazPista t (tipoPeca h p) b)
+
+fazMapa :: [(Int,Int)] -> Int -> Int -> Mapa
+fazMapa _ 0 _ = []
+fazMapa l npistas comprimento = (fazPista (take (comprimento-1) l) (Recta Terra 0) True) : (fazMapa (drop (comprimento-1) l) (npistas-1) comprimento)

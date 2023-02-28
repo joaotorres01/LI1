@@ -1,0 +1,59 @@
+-- | Este módulo define funções comuns da Tarefa 4 do trabalho prático.
+module Tarefa4_2019li1g093 where
+
+import LI11920
+import Tarefa2_2019li1g093
+-- * Testes
+-- | Testes unitários da Tarefa 4.
+--
+-- Cada teste é um par (/tempo/,/'Mapa'/,/'Jogador'/).
+testesT4 :: [(Double,Mapa,Jogador)]
+testesT4 = []
+
+-- * Funções principais da Tarefa 4.
+
+-- | Avança o estado de um 'Jogador' um 'passo' em frente, durante um determinado período de tempo.
+passo :: Double -- ^ O tempo decorrido.
+     -> Mapa    -- ^ O mapa utilizado.
+     -> Jogador -- ^ O estado anterior do 'Jogador'.
+     -> Jogador -- ^ O estado do 'Jogador' após um 'passo'.
+passo t m j = move t m (acelera t m j)
+
+-- | Altera a velocidade de um 'Jogador', durante um determinado período de tempo.
+acelera :: Double -- ^ O tempo decorrido.
+     -> Mapa    -- ^ O mapa utilizado.
+     -> Jogador -- ^ O estado anterior do 'Jogador'.
+     -> Jogador -- ^ O estado do 'Jogador' após acelerar.
+acelera = undefined
+
+-- | Altera a posição de 'Jogador', durante um determinado período de tempo.
+move :: Double -- ^ O tempo decorrido.
+     -> Mapa    -- ^ O mapa utilizado.
+     -> Jogador -- ^ O estado anterior do 'Jogador'.
+     -> Jogador -- ^ O estado do 'Jogador' após se movimentar.
+move = undefined
+
+
+v' :: Jogador -> Piso -> Double -> Double
+v' (Jogador _ _ v _ e) piso t = (v + (fromIntegral(accelMota v e) - ((atrito piso e) * v)) * t)
+
+
+accelMota :: Double -> EstadoJogador-> Int
+accelMota v e = if (v < 2 && ifAcelera e) then 1 else 0   
+
+atrito :: Piso -> EstadoJogador -> Double
+atrito p e = if p==Terra && ifchao e then 0.25 else
+				if p==Relva && ifchao e then 0.75 else
+				if p==Boost && ifchao e  then -0.50 else
+				if p==Lama && ifchao e then 1.50 else 
+				if p==Cola && ifchao e then 3.00 else
+				if ifAr e then 0.125 else 0
+
+ifAcelera :: EstadoJogador -> Bool
+ifAcelera (Chao True) = True
+ifAcelera _ = False
+
+tiraTimeout :: EstadoJogador -> Double -> Double
+tiraTimeout (Morto time) t = if (time-t)>=0 then time-t else 0
+
+movimentar :: Jogador -> Double -> 

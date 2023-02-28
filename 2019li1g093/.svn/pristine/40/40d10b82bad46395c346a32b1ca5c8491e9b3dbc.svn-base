@@ -1,0 +1,52 @@
+-- | Este módulo define funções comuns da Tarefa 3 do trabalho prático.
+module Tarefa3_2019li1g093 where
+
+import LI11920
+import Constroi
+import Tarefa1_2019li1g093
+import Tarefa0_2019li1g093
+--pista p intrucao, mapa p instrucao, peca p instrucao
+
+-- * Testes
+
+-- | Testes unitários da Tarefa 3.
+--
+-- Cada teste é um 'Mapa'.
+testesT3 :: [Mapa]
+testesT3 = [(gera 2 5 1), (gera 1 2 3), (gera 5 100 2), (gera 8 4 8), (gera 4 7 1), (gera 6 2 7), (gera 9 3 6), (gera 1 99 45), (gera 66 3 47), (gera 38 91 32), (gera 9 13 12), (gera 4 9 15)]
+-- * Funções principais da Tarefa 3.
+
+-- | Desconstrói um 'Mapa' numa sequência de 'Instrucoes'.
+--
+-- __NB:__ Uma solução correcta deve retornar uma sequência de 'Instrucoes' tal que, para qualquer mapa válido 'm', executar as instruções '(desconstroi m)' produza o mesmo mapa 'm'.
+--
+-- __NB:__ Uma boa solução deve representar o 'Mapa' dado no mínimo número de 'Instrucoes', de acordo com a função 'tamanhoInstrucoes'.
+
+
+desconstroi :: Mapa -> Instrucoes
+desconstroi (h:t) = desfazMapa (h:t) 0 
+
+desfazPeca :: Peca -- peca que vai ser convertida numa 'Instrucao'
+            -> Int--numero da pista em que a peca se encontra
+            -> Instrucao
+desfazPeca (Recta p hi) n = Anda [n] p
+desfazPeca (Rampa p hi hf) n = if hf > hi then Sobe [n] p (hf-hi) else 
+                             if hf < hi then Desce [n] p (abs (hf-hi)) else Anda [n] p
+                            
+desfazPista:: Pista --pista que vai ser convertida em 'Intrucoes'
+            -> Int --numero da pista que se vai desfazer 
+            -> Instrucoes
+desfazPista [] _ = []
+desfazPista (h:t) x = desfazPeca h x: desfazPista t x  
+
+desfazMapa:: Mapa 
+            -> Int --
+            -> Instrucoes -- 
+desfazMapa [] _ = []
+desfazMapa (x:xs) c = desfazPista (tail x) c ++ desfazMapa xs (c+1) 
+
+
+
+--allDifferent:: (Eq a) => [a] -> Bool
+--allDifferent [] = True
+--allDifferent (x:xs) = if notElem x xs then allDifferent xs else False 

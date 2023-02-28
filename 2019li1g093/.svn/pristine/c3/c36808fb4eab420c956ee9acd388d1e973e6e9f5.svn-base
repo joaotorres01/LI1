@@ -1,0 +1,121 @@
+module Main where
+
+import LI11920
+import Tarefa1_2019li1g093
+import Tarefa2_2019li1g093
+import Tarefa4_2019li1g093
+import Graphics.Gloss.Data.Picture
+import Graphics.Gloss.Interface.Pure.Game
+import Juicy
+import Codec.Picture.Types as Juicy
+import Codec.Picture as Juicy
+import Graphics.Gloss
+import Graphics.Gloss.Juicy 
+
+
+-- | Estado prefefinido do Jogo
+estadoInicial :: Estado 
+estadoInicial = Estado 
+    (gera 1 15 474)
+    [Jogador 0 0 0 4 (Chao True)]
+
+-- | Função que lê o Estado do Jogo e na lista de imagens e desenha a interface do jogo 
+desenhaEstado :: Estado -> [DynamicImage] -> [Picture]
+desenhaEstado (Estado m ((Jogador _ d _ _ _):_)) imagens =
+    desenhaMapa m  (-200) (0) imagens
+                                                           
+-- | Função que desenha todas as pistas, formando assim o mapa
+desenhaMapa :: Mapa -> Float -> Float -> [DynamicImage] -> [Picture]
+desenhaMapa (h:t) x y imagens = (desenhaPista h x y imagens) ++ (desenhaMapa t x (y-60) imagens)
+desenhaMapa [] _ _  _ = []
+
+-- | Função que desenha todas as Peças de uma pista
+desenhaPista :: Pista -> Float -> Float -> [DynamicImage] -> [Picture]
+desenhaPista (h:t) x y imagens = (desenhaPeca h x y imagens) : (desenhaPista t (x+60) y imagens)
+desenhaPista [] _ _ _ = []                            
+
+-- | Função que recebe uma Peça e vê qual a imagem que lhe corresponde
+desenhaPeca :: Peca -> Float -> Float -> [DynamicImage] -> Picture
+desenhaPeca (Recta p h) x y (terra:lama:boost:cola:relva:_) = 
+    let textura  
+            | p==Terra = terra
+            | p==Lama = lama
+            | p==Boost = boost
+            | p==Cola = cola
+            | otherwise = relva
+        Just text = fromDynamicImage textura 
+    in Translate x (y+(fromIntegral (h*30))) text
+desenhaPeca (Rampa p hi hf) x y (terra:lama:boost:cola:relva:_) = 
+       															 let
+       															 	textura 
+            																| p==Terra = terra
+            																| p==Lama = lama
+            																| p==Boost = boost
+            																| p==Cola = cola
+           															 		| otherwise = relva
+       															 	textura' = if hf>hi then sobeDynamicImage (hf-hi) textura else desceDynamicImage (hi-hf) textura
+        															Just text = fromDynamicImage textura' 
+        														in if hi>hf 
+       															   then Translate x (y+(fromIntegral (hf*90))) text 
+       															   else Translate x (y+(fromIntegral (hi*90))) text
+
+-- | Função que faz com que o Estado se altere quando certas teclas são pressionadas
+reageEvento :: Event -> Estado -> Estado
+reageEvento (EventKey (Char 'w')    Down _ _) e  = jogada 0 Acelera e
+reageEvento (EventKey (Char 's')    Down _ _) e  = jogada 0 Desacelera e
+reageEvento (EventKey (Char 'a')    Down _ _) e  = jogada 0 (Movimenta E) e 
+reageEvento (EventKey (Char 'd')    Down _ _) e  = jogada 0 (Movimenta D) e 
+reageEvento (EventKey (Char 'c')    Down _ _) e  = jogada 0 (Dispara) e
+reageEvento _ e = e -- ignora qualquer outro evento
+
+-- | Função que faz com que o Estado de Jogo reaja ao longo do tempo
+reageTempo :: Float -> Estado -> Estado 
+reageTempo t e = e
+
+
+type EstadoGloss = (Estado,[DynamicImage])
+
+-- | EstadoGloss predefinido do jogo
+estadoGlossInicial :: [DynamicImage] -> EstadoGloss
+estadoGlossInicial imagens = (estadoInicial ,imagens)
+
+-- | FrameRate predefinida
+fr :: Int
+fr = 50
+
+-- | Display predefinido
+dm :: Display
+dm = FullScreen
+--dm = InWindow "Novo Jogo" (400, 400) (0, 0)
+
+-- | Função que faz com que o EstadoGloss reaja com o passar do tempo
+reageTempoGloss :: Float -> EstadoGloss -> EstadoGloss
+reageTempoGloss t (e,imagens) = (e,imagens)
+
+-- | Função que faz com que o EstadoGloss se altere quando certas teclas são pressionadas
+reageEventoGloss :: Event -> EstadoGloss -> EstadoGloss
+reageEventoGloss ev (e, imagens) = ((reageEvento ev e) ,imagens)
+
+-- | Função que recebe um EstadoGloss e "desenha" no ecrã o correspondente a esse EstadoGloss
+desenhaEstadoGloss :: EstadoGloss -> Picture
+desenhaEstadoGloss (e,g) = 
+    let estado = (desenhaEstado e g)
+    in Pictures estado
+                                  
+
+
+-- | Função que faz com que seja possivel testar os gráficos
+main :: IO ()
+main = do 
+    Right terra <- readImage "../texturas/terra.png"
+    Right lama <- readImage "../texturas/lama.png"
+    Right boost <- readImage "../texturas/boost.png"
+    Right cola <- readImage "../texturas/cola.png"
+    Right relva <- readImage "../texturas/relva.png"
+    play dm
+        black
+        fr
+        (estadoGlossInicial [terra,lama,boost,cola,relva])
+        desenhaEstadoGloss
+        reageEventoGloss
+        reageTempoGloss
