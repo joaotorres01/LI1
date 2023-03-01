@@ -1,2 +1,2 @@
 # LI1
-Repository of the LI1 course unit of the degree in Informatics Engineering
+Course unit of the Bachelor's degree in Software Engineering, University of Minho, 2019/2020.
